@@ -56,7 +56,10 @@ def main(participants_filename: str, results_filename: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the coffee matching app!")
     parser.add_argument('participants_filename', help="CSV file containing the participants' names for this week.")
-    parser.add_argument('results_filename', help="CSV file (filename only) to write the results to.")
+    parser.add_argument(
+        'results_filename', 
+        help="CSV file (filename only) to write the results to. Automatically saves to pairings/ folder."
+    )
     parser.add_argument('-v', '--verbose',
                         action='store_true')  # on/off flag
     args = parser.parse_args()
