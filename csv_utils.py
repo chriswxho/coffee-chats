@@ -3,10 +3,7 @@ import csv
 import datetime
 from typing import Dict, List, Tuple
 
-PAIRINGS_LOCATION = "pairings"
-IDS_LOCATION = "ids"
-
-def read_all_constraints() -> List[Tuple[str, str]]:
+def read_all_constraints(constraints_dir: str) -> List[Tuple[str, str]]:
     """
     Reads all the constraints from the pairings/ folder.
     Returns:
@@ -15,12 +12,12 @@ def read_all_constraints() -> List[Tuple[str, str]]:
     constraints = []
 
     # all previous pairings and constraints are stored in pairings/*.csv
-    csv_filenames = os.listdir(os.path.join(os.getcwd(), PAIRINGS_LOCATION))
+    csv_filenames = os.listdir(constraints_dir)
     for csv_filename in csv_filenames:
         if os.path.splitext(csv_filename)[1] != ".csv":
             print(f"Skipping {csv_filename} because it is not a csv file.")
             continue
-        with open(os.path.join(PAIRINGS_LOCATION, csv_filename)) as csv_file:
+        with open(os.path.join(constraints_dir, csv_filename)) as csv_file:
             for row in csv.reader(csv_file):
                 constraints.append(row)
     
@@ -45,18 +42,22 @@ def read_participants(participants_file: str) -> List[str]:
     
     return participants
         
-def write_schedule(pairings: List[Tuple[str, str]]):
+def write_schedule(pairings: List[Tuple[str, str]], destination: str) -> str:
     """
     Writes the pairings to a new csv file in the pairings/temp folder.
     Inputs:
         pairings: List[Tuple[str, str]], a list of IDs pairs to avoid pairing.
+    Outputs:
+        filename: str, the name of the csv file that was written.
     """
-    pass
+    with open(destination, "w") as f:
+        for pair in pairings:
+            csv.writer(f).writerow(pair)
 
-def generate_ids(names: List[str]) -> Dict[str, int]:
+def generate_ids(names: List[str], ids_dir: str) -> Dict[str, int]:
     # read ids from csv
     names_to_ids = {}
-    csv_filename = os.path.join(IDS_LOCATION, "ids.csv")
+    csv_filename = os.path.join(ids_dir, "ids.csv")
     if os.path.exists(csv_filename):
         with open(csv_filename) as csv_file:
             for name, num_id in csv.reader(csv_file):
@@ -68,9 +69,10 @@ def generate_ids(names: List[str]) -> Dict[str, int]:
             print(f"New participant: {name}. adding ID")
             names_to_ids[name] = len(names_to_ids)
     
-    # write ids to csv
+    # write new ids to csv
     with open(csv_filename, "w") as csv_file:
+        writer = csv.writer(csv_file)
         for name, num_id in names_to_ids.items():
-            csv_file.write(f"{name},{num_id}\n")
+            writer.writerow([name, num_id])
     
     return names_to_ids
