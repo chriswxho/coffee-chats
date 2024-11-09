@@ -26,6 +26,24 @@ def read_all_constraints() -> List[Tuple[str, str]]:
     
     # translate names to IDs
     return constraints
+
+def read_participants(participants_file: str) -> List[str]:
+    """
+    Reads all the participants from the pairings/ folder.
+    Returns:
+        participants: List[str], a list of participant names.
+    """
+    participants = []
+
+    # this week's participants should be part of cli input
+    if os.path.splitext(participants_file)[1] != ".csv":
+        raise RuntimeError(f"participants_file {participants_file} is not a csv file.")
+    
+    with open(participants_file) as csv_file:
+        for name in csv.reader(csv_file):
+            participants.append(name[0])
+    
+    return participants
         
 def write_schedule(pairings: List[Tuple[str, str]]):
     """
