@@ -1,7 +1,11 @@
+import logging
 import os
 import csv
 import datetime
 from typing import Dict, List, Tuple
+
+
+logger = logging.getLogger(__name__)
 
 def read_all_constraints(constraints_dir: str) -> List[Tuple[str, str]]:
     """
@@ -15,7 +19,7 @@ def read_all_constraints(constraints_dir: str) -> List[Tuple[str, str]]:
     csv_filenames = os.listdir(constraints_dir)
     for csv_filename in csv_filenames:
         if os.path.splitext(csv_filename)[1] != ".csv":
-            print(f"Skipping {csv_filename} because it is not a csv file.")
+            logger.info(f"Skipping \"{csv_filename}\" because it is not a csv file.")
             continue
         with open(os.path.join(constraints_dir, csv_filename)) as csv_file:
             for row in csv.reader(csv_file):
@@ -66,7 +70,7 @@ def generate_ids(names: List[str], ids_dir: str) -> Dict[str, int]:
     # generate new ids
     for name in names:
         if name not in names_to_ids:
-            print(f"New participant: {name}. adding ID")
+            logger.debug(f"New participant, adding name-ID pair {name}: {len(names_to_ids)}")
             names_to_ids[name] = len(names_to_ids)
     
     # write new ids to csv
