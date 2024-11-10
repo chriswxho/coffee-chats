@@ -97,7 +97,8 @@ def main(participants_filename: str, results_filename: str):
 
         csv_filenames = os.listdir(constraints_dirname)
         history = {}
-        for csv_filename in csv_filenames:
+        for filename in csv_filenames:
+            csv_filename = os.path.join(constraints_dirname, filename)
             pairings = read_all_pairings(csv_filename)
             history[csv_filename] = pairings
         
