@@ -17,9 +17,15 @@ def matchmake(
     for idx in ids:
         G.add_node(idx)
 
+    edges = []
     for i in range(len(ids)):
         for j in range(i+1, len(ids)):
-            G.add_edge(ids[i], ids[j])
+            edges.append((ids[i], ids[j]))
+
+    random.shuffle(edges)
+    
+    for u, v in edges:
+        G.add_edge(u, v)
     
     # exclude all edges according to constraints
     if constraints is not None:
