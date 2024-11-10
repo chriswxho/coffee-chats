@@ -7,46 +7,41 @@ from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
-def read_all_constraints(constraints_dir: str) -> List[Tuple[str, str]]:
+def read_all_pairings(pairings_file: str) -> List[Tuple[str, str]]:
     """
-    Reads all the constraints from the pairings/ folder.
+    Reads all pairings from the specified file.
+    Inputs:
+        pairings_file: str, the path to the pairings CSV to be read.
     Returns:
-        constraints: List[Tuple[str, str]], a list of IDs pairs to avoid pairing.
+        pairings: List[Tuple[str, str]], a list of IDs pairs to avoid pairing.
     """
-    constraints = []
+    pairings = []
+    if os.path.splitext(pairings_file)[1] != ".csv":
+        logger.info(f"Skip reading \"{pairings_file}\" because it\'s not a CSV file.")
+        return []
 
-    # all previous pairings and constraints are stored in pairings/*.csv
-    csv_filenames = os.listdir(constraints_dir)
-    for csv_filename in csv_filenames:
-        if os.path.splitext(csv_filename)[1] != ".csv":
-            logger.info(f"Skipping \"{csv_filename}\" because it is not a csv file.")
-            continue
-        with open(os.path.join(constraints_dir, csv_filename)) as csv_file:
-            for row in csv.reader(csv_file):
-                constraints.append(row)
-    
-    # translate names to IDs
-    return constraints
+    with open(pairings_file) as csv_file:
+        for row in csv.reader(csv_file):
+            pairings.append(row)
+    return pairings
 
 def read_participants(participants_file: str) -> List[str]:
     """
-    Reads all the participants from the pairings/ folder.
+    Reads all the participants from the specified file.
+    Inputs:
+        participants_file: str, the path to the participants CSV to be read.
     Returns:
         participants: List[str], a list of participant names.
     """
     participants = []
-
-    # this week's participants should be part of cli input
     if os.path.splitext(participants_file)[1] != ".csv":
-        raise RuntimeError(f"participants_file {participants_file} is not a csv file.")
-    
+        raise RuntimeError(f"participants_file {participants_file} is not a csv file.")    
     with open(participants_file) as csv_file:
         for name in csv.reader(csv_file):
             participants.append(name[0])
-    
     return participants
         
-def write_schedule(pairings: List[Tuple[str, str]], destination: str) -> str:
+def write_pairings(pairings: List[Tuple[str, str]], destination: str) -> str:
     """
     Writes the pairings to a new csv file in the pairings/temp folder.
     Inputs:
