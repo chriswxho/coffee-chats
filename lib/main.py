@@ -18,7 +18,10 @@ def init_logging(logger, verbose: bool):
     log_handler = logging.StreamHandler()
     log_handler.setStream(sys.stderr)
     log_handler.setFormatter(
-        logging.Formatter("[%(asctime)s.%(msecs)03d %(filename)s:%(lineno)s] %(levelname)s: %(message)s")
+        logging.Formatter(
+            "[%(asctime)0s.%(msecs)03d %(filename)s:%(lineno)s] %(levelname)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     )
 
     root_logger = logging.getLogger()
@@ -39,7 +42,7 @@ def main(participants_filename: str, results_filename: str):
         constraints_filename = os.path.join(constraints_dirname, filename)
         constraints_names.extend(read_all_pairings(constraints_filename))
 
-    # 1.5) if there's an odd number of participants, swap between E and M!
+    # 1.5) if there's an odd number of participants, take out either E or M!
     if len(participant_names) % 2 == 1:
         skip_choice = None
         logger.error("Odd number of participants this month! Who are we leaving out?")
@@ -57,7 +60,8 @@ def main(participants_filename: str, results_filename: str):
     # 2) load existing IDs for repeat names and generate IDs for names
     logger.info("Generating IDs for participants and constraints")
     unique_constraint_names = set(itertools.chain(*constraints_names))
-    all_names = unique_constraint_names | set(participant_names)
+    participants = set(participant_names)
+    all_names = unique_constraint_names | participants
     names_to_ids = generate_ids(all_names, IDS_LOCATION)
     ids_to_names = {v: k for k, v in names_to_ids.items()}
 
@@ -75,41 +79,46 @@ def main(participants_filename: str, results_filename: str):
 
     matches_filename = None
     while matches_filename is None:
-        # 4) matchmaking algorithm via blossom + primal dual method
+        # 4) matchmaking algorithm
         logger.info("Running matchmaking")
-        res_ids = matchmake(participant_ids, constraints_ids)
+        pair_ids = matchmake(participant_ids, constraints_ids)
+        res_pair_names = [(ids_to_names[pair_id[0]], ids_to_names[pair_id[1]]) for pair_id in pair_ids]
 
-        # 5) write matches to file
-        matches_filename = os.path.join(os.getcwd(), PAIRINGS_LOCATION, results_filename)
-        res = []
-        for pair_id in res_ids:
-            res.append([ids_to_names[pair_id[0]], ids_to_names[pair_id[1]]])
-        write_pairings(res, matches_filename)
-
-        # 6) sanity check that everyone is paired, and that pairs were never repeated
-        actual_participant_ids = set(itertools.chain(*res_ids))
-        nonparticipant_ids = set(participant_ids) - actual_participant_ids
-        if len(nonparticipant_ids) == 0:
+        # 5) sanity check that everyone is paired, and that pairs were never repeated
+        logger.info("Checking that everyone that is participating has been paired...")
+        actual_participants = set(itertools.chain(*res_pair_names))
+        nonparticipants = participants - actual_participants
+        if len(nonparticipants) == 0:
             logger.info("All participants were paired successfully!")
         else:
             logger.error("Some people left unpaired :(")
-            logger.error(f"Unpaired folks: {[ids_to_names[idx] for idx in nonparticipant_ids]}")
-
-        csv_filenames = os.listdir(constraints_dirname)
+            logger.error(f"Unpaired folks: {nonparticipants}")
+        
+        logger.info("Checking that no pairings are repeats...")
         history = {}
+        # grab all the previous pairing history
+        csv_filenames = os.listdir(constraints_dirname)
         for filename in csv_filenames:
+            if filename.endswith("constraints.csv"):
+                logger.debug("Skipping \"constraints.csv\" file during history check")
+                continue
             csv_filename = os.path.join(constraints_dirname, filename)
-            pairings = read_all_pairings(csv_filename)
-            history[csv_filename] = pairings
+            history[csv_filename] = read_all_pairings(csv_filename)
+        # also add in currently generated pairings
+        history[results_filename] = res_pair_names
         
         all_histories = get_all_pairing_history(history)
         if all(len(history) == 1 for history in all_histories.values()):
-            logger.info("All pairings are valid!")
+            logger.info("All pairings are new and haven\'t been repeated!")
         else:
             logger.error("Some invalid pairings. Repeated pairings, and offending files:")
-            for pairing_names, filenames in all_histories.items():
+            for pair_names, filenames in all_histories.items():
                 if len(filenames) > 1:
-                    logger.error(f"{pairing_names[0]} & {pairing_names[1]}: {filenames}")
+                    logger.error(f"{pair_names[0]} & {pair_names[1]}: {filenames}")
+
+        # 6) write matches to file
+        matches_filename = os.path.join(os.getcwd(), PAIRINGS_LOCATION, results_filename)
+        write_pairings(res_pair_names, matches_filename)
         
         # 7) confirm with user
         choice = None
@@ -135,9 +144,6 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
 
-    
-
-    # logging
     init_logging(logger, args.verbose)
 
     main(args.participants_filename, args.results_filename)
