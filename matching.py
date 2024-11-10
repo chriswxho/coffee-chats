@@ -32,9 +32,9 @@ def matchmake(
     matches = nx.max_weight_matching(G, maxcardinality=True)
     return matches
 
-def check_pairing_history(
+def get_all_pairing_history(
     schedules_of_pairings: Dict[str, List[Tuple[int, int]]]
-) -> Dict[frozenset, List[str]]:
+) -> Dict[Tuple[int, int], List[str]]:
     """
     Consolidates all match histories.
     """
@@ -43,7 +43,10 @@ def check_pairing_history(
         for pairing in pairings:
             pairing = frozenset(pairing)
             if pairing in seen:
-                logger.warning(f"Pairing {pairing} was already done in {seen[pairing]}")
+                logger.debug(f"Pairing {pairing} was already done in {seen[pairing][-1]}")
             seen[pairing].append(match_csv_filename)
     
-    return seen
+    formatted_seen = {}
+    for k, v in seen.items():
+        formatted_seen[tuple(k)] = v
+    return formatted_seen

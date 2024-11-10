@@ -4,7 +4,7 @@ import argparse
 import os
 import itertools
 from csv_utils import read_all_pairings, generate_ids, read_participants, write_pairings
-from matching import matchmake, check_pairing_history
+from matching import matchmake, get_all_pairing_history
 import csv
 
 
@@ -102,13 +102,14 @@ def main(participants_filename: str, results_filename: str):
             pairings = read_all_pairings(csv_filename)
             history[csv_filename] = pairings
         
-        all_histories = check_pairing_history(history)
+        all_histories = get_all_pairing_history(history)
         if all(len(history) == 1 for history in all_histories.values()):
             logger.info("All pairings are valid!")
         else:
             logger.error("Some invalid pairings. Repeated pairings, and offending files:")
-            for pairing, filenames in all_histories.items():
-                logger.error(f"{ids_to_names[pairing[0]] - ids_to_names[pairing[1]]}: {filenames}")
+            for pairing_names, filenames in all_histories.items():
+                if len(filenames) > 1:
+                    logger.error(f"{pairing_names[0]} & {pairing_names[1]}: {filenames}")
         
         # 7) confirm with user
         choice = None
