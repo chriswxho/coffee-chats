@@ -22,7 +22,7 @@ def matchmake(
         for j in range(i+1, len(ids)):
             edges.append((ids[i], ids[j]))
 
-    random.shuffle(edges)
+    random.shuffle(edges) 
     
     for u, v in edges:
         G.add_edge(u, v)
