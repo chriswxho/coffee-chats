@@ -7,6 +7,6 @@ fi
 # Activate the virtual environment
 source coffee-chats/bin/activate
 # Run the python script with the provided arguments
-python3 main.py "$1" "$2"
+python3 lib/main.py "$1" "$2"
 # Deactivate the virtual environment
 deactivate
