@@ -1,9 +1,9 @@
 import logging
 import random
-import math
 from collections import defaultdict
 from typing import Optional, List, Tuple, Dict
 import networkx as nx
+from networkx.exception import NetworkXError
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def matchmake(
         for constraint in constraints:
             try:
                 G.remove_edge(*constraint)
-            except nx.exception.NetworkXError:
+            except NetworkXError:
                 logger.debug(f"skip adding edge {constraint} because one or more persons in this pair is not a participant")
 
     matches = nx.max_weight_matching(G, maxcardinality=True)

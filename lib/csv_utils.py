@@ -41,7 +41,7 @@ def read_participants(participants_file: str) -> List[str]:
             participants.append(name[0])
     return participants
         
-def write_pairings(pairings: List[Tuple[str, str]], destination: str) -> str:
+def write_pairings(pairings: List[Tuple[str, str]], destination: str) -> None:
     """
     Writes the pairings to a new csv file in the pairings/temp folder.
     Inputs:

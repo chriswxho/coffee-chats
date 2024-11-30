@@ -14,7 +14,7 @@ IDS_LOCATION = "ids"
 
 logger = logging.getLogger(__name__)
 
-def init_logging(logger, verbose: bool):
+def init_logging(verbose: bool):
     log_handler = logging.StreamHandler()
     log_handler.setStream(sys.stderr)
     log_handler.setFormatter(
@@ -62,7 +62,7 @@ def main(participants_filename: str, results_filename: str):
     unique_constraint_names = set(itertools.chain(*constraints_names))
     participants = set(participant_names)
     all_names = unique_constraint_names | participants
-    names_to_ids = generate_ids(all_names, IDS_LOCATION)
+    names_to_ids = generate_ids(list(all_names), IDS_LOCATION)
     ids_to_names = {v: k for k, v in names_to_ids.items()}
 
     # 3) preprocess participants and constraints
@@ -144,6 +144,6 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
 
-    init_logging(logger, args.verbose)
+    init_logging(args.verbose)
 
     main(args.participants_filename, args.results_filename)
