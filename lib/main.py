@@ -5,19 +5,32 @@ import os
 import itertools
 from csv_utils import read_all_pairings, generate_ids, read_participants, write_pairings
 from matching import matchmake, get_all_pairing_history
-import csv
+import datetime
 
 
 PAIRINGS_LOCATION = "pairings"
 IDS_LOCATION = "ids"
+LOGS_LOCATION = "logs"
 
 
 logger = logging.getLogger(__name__)
 
 
 def init_logging(verbose: bool):
-    log_handler = logging.StreamHandler()
-    log_handler.setStream(sys.stderr)
+    root_logger = logging.getLogger()
+
+    if not (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
+        log_handler = logging.StreamHandler(sys.stderr)
+    else:
+        logloc = os.path.join(os.getcwd(), LOGS_LOCATION)
+        if not os.path.exists(logloc):
+            os.mkdir(logloc)
+        log_file = os.path.join(
+            logloc, f"coffee-chat-debug-logs-{datetime.datetime.now()}.txt"
+        )
+        open(log_file, "w").close()
+        log_handler = logging.FileHandler(log_file)
+
     log_handler.setFormatter(
         logging.Formatter(
             "[%(asctime)0s.%(msecs)03d %(filename)s:%(lineno)s] %(levelname)s: %(message)s",
@@ -25,7 +38,6 @@ def init_logging(verbose: bool):
         )
     )
 
-    root_logger = logging.getLogger()
     root_logger.addHandler(log_handler)
     if verbose:
         root_logger.setLevel(logging.DEBUG)
@@ -165,7 +177,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
-
+    participants_filename = "participants/nov24.csv"
+    results_filename = "nov24test.csv"
     init_logging(args.verbose)
-
-    main(args.participants_filename, args.results_filename)
+    main(participants_filename, results_filename)

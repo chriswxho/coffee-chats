@@ -1,2 +1,6 @@
 **/__pycache__
-coffee-chats
+coffee-chats/
+dist/
+**.spec
+.DS_Store
+build/
