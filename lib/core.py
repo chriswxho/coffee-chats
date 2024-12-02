@@ -60,6 +60,7 @@ class CoffeeChatCore:
 
     def load_data(
         self,
+        # (TODO): these seem to be problematic
         constraints_filename: str = os.path.join(PAIRINGS_LOCATION, "constraints.csv"),
         ids_filename: str = os.path.join(IDS_LOCATION, "ids.csv"),
     ) -> CoffeeChatLoadData:
