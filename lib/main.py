@@ -60,7 +60,7 @@ def main(participants_filename: str, results_filename: str):
                 f"Deleting generated matches file at {core.results_filename}, exiting."
             )
             os.remove(core.results_filename)
-            exit(0)
+            break
         else:  # choice is Y or y
             logger.info(
                 f"Finished matchmaking, results saved to {core.results_filename}"
