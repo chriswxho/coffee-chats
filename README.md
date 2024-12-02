@@ -2,7 +2,10 @@
 Coffee chat matching app
 
 ## Instructions
-1) Setup by running 
+
+### CLI version
+
+1) Setup by running
 ```
 sh setup.sh
 ```
@@ -13,7 +16,7 @@ sh main.sh <participants file> <results file>
 
 For example:
 ```
-sh main.sh participants/nov24.csv nov24_test.csv
+sh main.sh participants/nov24.csv pairings/nov24_test.csv
 ```
 
 You might run into permission errors.

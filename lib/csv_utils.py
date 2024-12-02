@@ -57,12 +57,11 @@ def write_pairings(pairings: List[Tuple[str, str]], destination: str) -> None:
             csv.writer(f).writerow(pair)
 
 
-def generate_ids(names: List[str], ids_dir: str) -> Dict[str, int]:
+def generate_ids(names: List[str], ids_filename: str) -> Dict[str, int]:
     # read ids from csv
     names_to_ids = {}
-    csv_filename = os.path.join(ids_dir, "ids.csv")
-    if os.path.exists(csv_filename):
-        with open(csv_filename) as csv_file:
+    if os.path.exists(ids_filename):
+        with open(ids_filename) as csv_file:
             for name, num_id in csv.reader(csv_file):
                 names_to_ids[name] = int(num_id)
 
@@ -75,7 +74,7 @@ def generate_ids(names: List[str], ids_dir: str) -> Dict[str, int]:
             names_to_ids[name] = len(names_to_ids)
 
     # write new ids to csv
-    with open(csv_filename, "w") as csv_file:
+    with open(ids_filename, "w") as csv_file:
         writer = csv.writer(csv_file)
         for name, num_id in names_to_ids.items():
             writer.writerow([name, num_id])
