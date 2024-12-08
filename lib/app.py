@@ -60,20 +60,24 @@ class CoffeeChatWidget(QWidget):
         file_path = self.file_path_label.text()
         folder_path = self.folder_path_label.text()
         filename = self.text_box.text()
+        main_folder_path = self.main_folder_path_label.text()
 
         if (
             file_path == "No file selected"
             or folder_path == "No folder selected"
+            or main_folder_path == "No folder selected"
             or filename == ""
         ):
             self.message.setText(
-                "Please specify a participants file, results destination, and a results filename."
+                "Please specify the location of coffee-chats, participants file, pairings folder, and a results filename."
             )
             self.message.show()
         else:
             self.message.setText("")
             if not filename.endswith(".csv"):
                 filename += ".csv"
+
+            os.chdir(main_folder_path)
             core = CoffeeChatCore(file_path, os.path.join(folder_path, filename))
             loaded_data = core.load_data()
 
@@ -101,6 +105,14 @@ class CoffeeChatWidget(QWidget):
         inputFilesGroupBox = QGroupBox("Select participants")
         group_box_layout = QVBoxLayout()
 
+        # this is where coffee-chats should be
+        button = QPushButton("Select coffee-chats folder")
+        button.clicked.connect(self.select_main_folder)
+        group_box_layout.addWidget(button)
+        self.main_folder_path_label = QLabel()
+        self.main_folder_path_label.setText("No folder selected")
+        group_box_layout.addWidget(self.main_folder_path_label)
+
         # select file
         button = QPushButton("Select participants file")
         button.clicked.connect(self.select_file)
@@ -110,7 +122,7 @@ class CoffeeChatWidget(QWidget):
         group_box_layout.addWidget(self.file_path_label)
 
         # select folder
-        button = QPushButton("Select pairing results destination folder")
+        button = QPushButton("Select pairing folder")
         button.clicked.connect(self.select_folder)
         group_box_layout.addWidget(button)
         self.folder_path_label = QLabel()
@@ -159,6 +171,14 @@ class CoffeeChatWidget(QWidget):
 
         # this is None if unselected
         print(self.folder_path_label.text())
+
+    def select_main_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder")
+        if folder_path:
+            self.main_folder_path_label.setText(folder_path)
+
+        # this is None if unselected
+        print(self.main_folder_path_label.text())
 
     def center(self):
         qrect = self.frameGeometry()
