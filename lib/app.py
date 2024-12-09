@@ -35,8 +35,6 @@ class CoffeeChatWidget(QWidget):
 
         self.inputFilesGroupBox = self.createInputsBox()
         self.startButtonBox = self.createStartButtonBox()
-        self.oddOneOutBox = self.createOddOneOutBox()
-        self.notifyRemoveOneBox = self.createNotifyRemoveOneBox()
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.inputFilesGroupBox)
@@ -64,7 +62,7 @@ class CoffeeChatWidget(QWidget):
         participants_file_path = self.file_path_label.text()
         res_filename = self.text_box.text()
 
-        if res_filename == "CONSTRAINTS" or res_filename == "CONSTRAINTS.csv":
+        if res_filename.lower() == "constraints" or res_filename.lower() == "constraints.csv":
             self.message.setText(
                 "The filename 'CONSTRAINTS.csv' is reserved for the constraints file. Please choose a different filename."
             )
@@ -88,22 +86,22 @@ class CoffeeChatWidget(QWidget):
             if len(participant_names) % 2 == 1:
                 if "Eliette Seo" in participant_names and "Michael Youn" in participant_names:
                     self.sit_mode = "out"
-                    ret = self.oddOneOutBox.exec()
+                    ret = self.createOddOneOutBox().exec()
                     if ret == 0:
                         participant_names.remove("Eliette Seo")
                     elif ret == 1:
                         participant_names.remove("Michael Youn")
                 elif "Eliette Seo" in participant_names:
-                    self.notifyRemoveOneBox.exec()
-                    self.maybe_solo_participant = "Eliette Seo"
+                    self.maybe_solo_participant = "Eliette"
+                    self.createNotifyRemoveOneBox().exec()
                     participant_names.remove("Eliette Seo")
                 elif "Michael Youn" in participant_names:
-                    self.notifyRemoveOneBox.exec()
-                    self.maybe_solo_participant = "Michael Youn"
+                    self.maybe_solo_participant = "Michael"
+                    self.createNotifyRemoveOneBox().exec()
                     participant_names.remove("Michael Youn")
                 else:
                     self.sit_mode = "in"
-                    ret = self.oddOneOutBox.exec()
+                    ret = self.createOddOneOutBox().exec()
                     if ret == 0:
                         participant_names.append("Eliette Seo")
                     elif ret == 1:
