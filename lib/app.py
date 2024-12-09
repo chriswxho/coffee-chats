@@ -1,18 +1,19 @@
+import time
 import logging
 import os
 import sys
 from typing import cast
-from PyQt5.QtWidgets import (
+from PyQt6.QtGui import QScreen
+from PyQt6.QtWidgets import (
     QApplication,
-    QDesktopWidget,
     QFileDialog,
     QGroupBox,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
-    QMessageBox,
 )
 
 from core import init_logging, CoffeeChatCore
@@ -24,15 +25,18 @@ class CoffeeChatWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.sit_mode = "out"
+        self.maybe_solo_participant = None
 
     def initUI(self):
         # create the window
-        self.setGeometry(100, 100, 600, 400)
+        self.setGeometry(100, 100, 800, 500)
         self.setWindowTitle("Coffee Chat Pairings Generator")
 
         self.inputFilesGroupBox = self.createInputsBox()
         self.startButtonBox = self.createStartButtonBox()
         self.oddOneOutBox = self.createOddOneOutBox()
+        self.notifyRemoveOneBox = self.createNotifyRemoveOneBox()
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.inputFilesGroupBox)
@@ -57,39 +61,53 @@ class CoffeeChatWidget(QWidget):
         return startButtonBox
 
     def onButtonClicked(self):
-        file_path = self.file_path_label.text()
-        folder_path = self.folder_path_label.text()
-        filename = self.text_box.text()
-        main_folder_path = self.main_folder_path_label.text()
+        participants_file_path = self.file_path_label.text()
+        res_filename = self.text_box.text()
 
-        if (
-            file_path == "No file selected"
-            or folder_path == "No folder selected"
-            or main_folder_path == "No folder selected"
-            or filename == ""
-        ):
+        if res_filename == "CONSTRAINTS" or res_filename == "CONSTRAINTS.csv":
             self.message.setText(
-                "Please specify the location of coffee-chats, participants file, pairings folder, and a results filename."
+                "The filename 'CONSTRAINTS.csv' is reserved for the constraints file. Please choose a different filename."
+            )
+            self.message.show()
+        elif participants_file_path == "No file selected" or res_filename == "":
+            self.message.setText(
+                "Please specify the file for this month's participants, and a filename for storing this month's generated pairings."
             )
             self.message.show()
         else:
             self.message.setText("")
-            if not filename.endswith(".csv"):
-                filename += ".csv"
+            if not res_filename.endswith(".csv"):
+                res_filename += ".csv"
 
-            os.chdir(main_folder_path)
-            core = CoffeeChatCore(file_path, os.path.join(folder_path, filename))
+            core = CoffeeChatCore(participants_file_path, res_filename)
             loaded_data = core.load_data()
 
             participant_names = loaded_data.participant_names
             constraints_names = loaded_data.constraints_names
 
             if len(participant_names) % 2 == 1:
-                ret = self.oddOneOutBox.exec()
-                if ret == 0:
+                if "Eliette Seo" in participant_names and "Michael Youn" in participant_names:
+                    self.sit_mode = "out"
+                    ret = self.oddOneOutBox.exec()
+                    if ret == 0:
+                        participant_names.remove("Eliette Seo")
+                    elif ret == 1:
+                        participant_names.remove("Michael Youn")
+                elif "Eliette Seo" in participant_names:
+                    self.notifyRemoveOneBox.exec()
+                    self.maybe_solo_participant = "Eliette Seo"
                     participant_names.remove("Eliette Seo")
-                elif ret == 1:
+                elif "Michael Youn" in participant_names:
+                    self.notifyRemoveOneBox.exec()
+                    self.maybe_solo_participant = "Michael Youn"
                     participant_names.remove("Michael Youn")
+                else:
+                    self.sit_mode = "in"
+                    ret = self.oddOneOutBox.exec()
+                    if ret == 0:
+                        participant_names.append("Eliette Seo")
+                    elif ret == 1:
+                        participant_names.append("Michael Youn")
 
             # generate pairing
             pair_names = core.run_matchmaking(participant_names, constraints_names)
@@ -105,14 +123,6 @@ class CoffeeChatWidget(QWidget):
         inputFilesGroupBox = QGroupBox("Select participants")
         group_box_layout = QVBoxLayout()
 
-        # this is where coffee-chats should be
-        button = QPushButton("Select coffee-chats folder")
-        button.clicked.connect(self.select_main_folder)
-        group_box_layout.addWidget(button)
-        self.main_folder_path_label = QLabel()
-        self.main_folder_path_label.setText("No folder selected")
-        group_box_layout.addWidget(self.main_folder_path_label)
-
         # select file
         button = QPushButton("Select participants file")
         button.clicked.connect(self.select_file)
@@ -120,14 +130,6 @@ class CoffeeChatWidget(QWidget):
         self.file_path_label = QLabel()
         self.file_path_label.setText("No file selected")
         group_box_layout.addWidget(self.file_path_label)
-
-        # select folder
-        button = QPushButton("Select pairing folder")
-        button.clicked.connect(self.select_folder)
-        group_box_layout.addWidget(button)
-        self.folder_path_label = QLabel()
-        self.folder_path_label.setText("No folder selected")
-        group_box_layout.addWidget(self.folder_path_label)
 
         group_box_layout.addStretch(1)
 
@@ -149,41 +151,30 @@ class CoffeeChatWidget(QWidget):
 
         box = QMessageBox(self)
         box.setWindowTitle("Odd number of participants this time!")
-        box.setText("Who's volunteering to sit out?")
-        box.addButton(eliette_button, QMessageBox.NoRole)  # returns 0
-        box.addButton(michael_button, QMessageBox.YesRole)  # returns 1
+        box.setText(f"Who's volunteering to sit {self.sit_mode}?")
+        box.addButton(eliette_button, QMessageBox.ButtonRole.NoRole)  # returns 0
+        box.addButton(michael_button, QMessageBox.ButtonRole.YesRole)  # returns 1
+
+        return box
+
+    def createNotifyRemoveOneBox(self) -> QMessageBox:
+        box = QMessageBox(self)
+        box.setWindowTitle("Odd number of participants this time!")
+        box.setText(f"Only {self.maybe_solo_participant} is participating this time. Removing them from this month's participants.")
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
         return box
 
     def select_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select File", "~", "CSV Files (*.csv)"
+            self, "Select File", ".", "CSV Files (*.csv)"
         )
         if file_path:
             self.file_path_label.setText(file_path)
 
-        print(self.file_path_label.text())
-
-    def select_folder(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder")
-        if folder_path:
-            self.folder_path_label.setText(folder_path)
-
-        # this is None if unselected
-        print(self.folder_path_label.text())
-
-    def select_main_folder(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder")
-        if folder_path:
-            self.main_folder_path_label.setText(folder_path)
-
-        # this is None if unselected
-        print(self.main_folder_path_label.text())
-
     def center(self):
         qrect = self.frameGeometry()
-        desktop = cast(QDesktopWidget, QApplication.desktop())
-        cp = desktop.availableGeometry().center()
+        cp = cast(QScreen, self.screen()).availableGeometry().center()
         qrect.moveCenter(cp)
         self.move(qrect.topLeft())
 
@@ -193,11 +184,18 @@ def main():
     ex = CoffeeChatWidget()
     ex.center()
     ex.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
     try:
+        if "CoffeeChatPairing.app/Contents/MacOS/CoffeeChatPairing" in sys.executable:
+            # we're running in windowed mode, go to app location and go up a few
+            os.chdir(os.path.dirname(sys.executable))
+            os.chdir("../../..")
+        else:
+            os.chdir(os.path.dirname(sys.executable))
+
         init_logging(verbose=True)
         main()
     except Exception as e:

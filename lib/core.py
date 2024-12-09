@@ -5,7 +5,6 @@ import itertools
 from csv_utils import read_all_pairings, generate_ids, read_participants, write_pairings
 from matching import matchmake, get_all_pairing_history
 import datetime
-import tempfile
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 
@@ -15,25 +14,18 @@ PAIRINGS_LOCATION = "pairings"
 IDS_LOCATION = "ids"
 LOGS_LOCATION = "logs"
 
+log_file = os.path.join(LOGS_LOCATION, f"coffee-chat-debug-logs-{datetime.datetime.now()}.txt")
+
 
 def init_logging(verbose=False) -> None:
     root_logger = logging.getLogger()
-
-    if not (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
-        sys.stderr = open(tempfile.TemporaryFile().name, "w")
-
-    log_handler = logging.StreamHandler(sys.stderr)
-    # else:
-    #     logloc = os.path.join(os.getcwd(), LOGS_LOCATION)
-    #     if not os.path.exists(logloc):
-    #         os.mkdir(logloc)
-    #     log_file = os.path.join(
-    #         logloc, f"coffee-chat-debug-logs-{datetime.datetime.now()}.txt"
-    #     )
-    #     open(log_file, "w").close()
-    #     log_handler = logging.FileHandler(log_file)
-
-    # https://stackoverflow.com/questions/60272656/how-to-log-error-information-into-file-when-using-pyinstaller-with-no-console
+        
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        if not os.path.exists(LOGS_LOCATION):
+            os.mkdir(LOGS_LOCATION)
+        log_handler = logging.FileHandler(log_file)
+    else:
+        log_handler = logging.StreamHandler(sys.stderr)
 
     log_handler.setFormatter(
         logging.Formatter(
@@ -58,21 +50,21 @@ class CoffeeChatLoadData:
 
 class CoffeeChatCore:
     def __init__(self, participants_filename: str, results_filename: str):
+        # both of these now refer to absolute paths
         self.participants_filename = participants_filename
-        self.results_filename = results_filename
+        self.results_filename = os.path.join(PAIRINGS_LOCATION, results_filename)
         self.names_to_ids: Dict[str, int] = {}
         self.verbose = False
 
     def load_data(
         self,
-        # (TODO): these seem to be problematic in GUI app
-        constraints_filename: str = os.path.join(PAIRINGS_LOCATION, "constraints.csv"),
+        constraints_filename: str = os.path.join(PAIRINGS_LOCATION, "CONSTRAINTS.csv"),
         ids_filename: str = os.path.join(IDS_LOCATION, "ids.csv"),
     ) -> CoffeeChatLoadData:
         logger.info(f"Loading participants from {self.participants_filename}")
         participant_names = read_participants(self.participants_filename)
 
-        constraints_dirname = os.path.join(os.getcwd(), PAIRINGS_LOCATION)  # ????
+        constraints_dirname = os.path.join(os.getcwd(), PAIRINGS_LOCATION)
         logger.info(f"Loading constraints from directory {constraints_dirname}")
         constraints_names = []
         for filename in os.listdir(constraints_dirname):

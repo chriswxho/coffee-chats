@@ -4,3 +4,4 @@ dist/
 **.spec
 .DS_Store
 build/
+logs/
